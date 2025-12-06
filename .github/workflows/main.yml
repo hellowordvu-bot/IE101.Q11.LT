@@ -1,0 +1,58 @@
+name: Build Test NextJS and Deploy to DockerHub
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+jobs:
+  build-test:
+    runs-on: ubuntu-20.04
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js 22.20.0
+        uses: actions/setup-node@v3
+        with:
+          node-version: '22.20.0'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run tests
+        run: npm test
+
+      - name: Build Next.js
+        run: npm run build
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: nextjs-build
+          path: ./
+          retention-days: 1
+
+  docker:
+    needs: build-test
+    runs-on: ubuntu-20.04
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Login to DockerHub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build Docker image
+        run: |
+          docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/nextjs-app:latest .
+
+      - name: Push Docker image
+        run: |
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/nextjs-app:latest
