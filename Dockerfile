@@ -33,7 +33,7 @@ RUN npm install --production
 # Copy kết quả build từ stage trước
 COPY --from=builder /app/.next ./.next
 COPY --from=builder /app/public ./public
-COPY --from=builder /app/next.config.js ./next.config.js
+COPY --from=builder /app/next.config.ts ./next.config.ts
 
 # Expose cổng mặc định Next.js
 EXPOSE 3000
