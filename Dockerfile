@@ -1,11 +1,12 @@
 # ========================
-# Stage 1: Build
+# Stage 1: Build stage
 # ========================
 FROM node:20-alpine AS builder
 
+# Tạo thư mục làm việc
 WORKDIR /app
 
-# Copy package.json & package-lock.json
+# Copy package.json và package-lock.json
 COPY package*.json ./
 
 # Cài tất cả dependencies
@@ -18,13 +19,14 @@ COPY . .
 RUN npm run build
 
 # ========================
-# Stage 2: Production
+# Stage 2: Production stage
 # ========================
 FROM node:20-alpine AS runner
 
+# Tạo thư mục làm việc
 WORKDIR /app
 
-# Copy package.json & cài production dependencies
+# Copy package.json và cài production dependencies
 COPY package*.json ./
 RUN npm install --production
 
@@ -33,7 +35,7 @@ COPY --from=builder /app/.next ./.next
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/next.config.js ./next.config.js
 
-# Expose port mặc định của Next.js
+# Expose cổng mặc định Next.js
 EXPOSE 3000
 
 # Command chạy ứng dụng
