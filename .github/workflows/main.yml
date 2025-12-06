@@ -1,4 +1,4 @@
-name: Build, Test and Push NextJS Docker Image
+name: Next.js CI/CD Pipeline
 
 on:
   push:
@@ -7,68 +7,47 @@ on:
     branches: [ "master" ]
 
 jobs:
-  # =========================
-  # Job 1: Build
-  # =========================
-  build:
+  build-nextjs:
     runs-on: ubuntu-latest
-    outputs:
-      build-status: ${{ steps.build-step.outcome }}
     steps:
-      - name: Checkout code
+      - name: Checkout repository
         uses: actions/checkout@v4
-
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '22.20.0'
-
       - name: Install dependencies
         run: npm install
-
-      - name: Build Next.js
-        id: build-step
+      - name: Build Next.js project
         run: npm run build
 
-  # =========================
-  # Job 2: Test
-  # =========================
-  test:
+  run-tests:
     runs-on: ubuntu-latest
-    needs: build
+    needs: build-nextjs
     steps:
-      - name: Checkout code
+      - name: Checkout repository
         uses: actions/checkout@v4
-
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '22.20.0'
-
       - name: Install dependencies
         run: npm install
-
-      - name: Run tests
+      - name: Run unit and integration tests
         run: npm test || echo "Tests failed, continue"
 
-  # =========================
-  # Job 3: Docker
-  # =========================
-  docker:
+  docker-build-and-push:
     runs-on: ubuntu-latest
-    needs: [build, test]
+    needs: [build-nextjs, run-tests]
     steps:
-      - name: Checkout code
+      - name: Checkout repository
         uses: actions/checkout@v4
-
       - name: Login to DockerHub
         uses: docker/login-action@v2
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-
       - name: Build Docker image
         run: docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/nextjs-app:latest .
-
       - name: Push Docker image
         run: docker push ${{ secrets.DOCKERHUB_USERNAME }}/nextjs-app:latest
