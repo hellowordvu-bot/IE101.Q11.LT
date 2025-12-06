@@ -1,34 +1,40 @@
+# ========================
 # Stage 1: Build
-FROM node:22-alpine AS builder
+# ========================
+FROM node:20-alpine AS builder
 
 WORKDIR /app
 
-# Install dependencies
+# Copy package.json & package-lock.json
 COPY package*.json ./
+
+# Cài tất cả dependencies
 RUN npm install
 
-# Copy all files
+# Copy toàn bộ source code
 COPY . .
 
-# Build the Next.js app
+# Build Next.js app
 RUN npm run build
 
-# Stage 2: Production image
-FROM node:22-alpine
+# ========================
+# Stage 2: Production
+# ========================
+FROM node:20-alpine AS runner
 
 WORKDIR /app
 
-# Copy only production dependencies
+# Copy package.json & cài production dependencies
 COPY package*.json ./
 RUN npm install --production
 
-# Copy build output from builder
+# Copy kết quả build từ stage trước
 COPY --from=builder /app/.next ./.next
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/next.config.js ./next.config.js
 
-# Expose Next.js default port
+# Expose port mặc định của Next.js
 EXPOSE 3000
 
-# Start the app in production mode
-CMD ["npx", "next", "start"]
+# Command chạy ứng dụng
+CMD ["npm", "start"]
