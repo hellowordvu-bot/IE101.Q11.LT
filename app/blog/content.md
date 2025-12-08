@@ -22,3 +22,7 @@ After this merge the app will be push and deployed
 ## Testing auto build and deployed 2
 
 After this merge the app will be push and deployed
+
+## Testing auto build and deployed 3
+
+After this merge the app will be push and deployed
