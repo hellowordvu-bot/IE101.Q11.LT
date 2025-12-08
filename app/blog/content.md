@@ -14,3 +14,7 @@ Curabitur non arcu in elit varius commodo.
 - Another item
 
 Thank you for reading!
+
+## Testing auto build and deployed
+
+After this merge the app will be push and deployed
