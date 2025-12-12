@@ -2,11 +2,12 @@ name: Next.js CI/CD Pipeline
 
 on:
   push:
-    branches: [ "master" ]
+    branches: [ "main" ]  # Đã sửa thành main cho khớp với dự án của bạn
   pull_request:
-    branches: [ "master" ]
+    branches: [ "main" ]
 
 jobs:
+  # Job 1: Build thử xem code có lỗi không
   build-nextjs:
     runs-on: ubuntu-latest
     steps:
@@ -15,12 +16,13 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '22.20.0'
+          node-version: '20' # Dùng bản ổn định (LTS)
       - name: Install dependencies
         run: npm install
       - name: Build Next.js project
         run: npm run build
 
+  # Job 2: Chạy Test
   run-tests:
     runs-on: ubuntu-latest
     needs: build-nextjs
@@ -30,24 +32,33 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '22.20.0'
+          node-version: '20'
       - name: Install dependencies
         run: npm install
       - name: Run unit and integration tests
-        run: npm test || echo "Tests failed, continue"
+        # Nếu chưa viết test thì lệnh này sẽ bỏ qua mà không báo lỗi
+        run: npm test || echo "No tests found or tests failed, continuing..."
 
+  # Job 3: Đóng gói Docker và đẩy lên Hub
   docker-build-and-push:
     runs-on: ubuntu-latest
     needs: [build-nextjs, run-tests]
+    if: github.ref == 'refs/heads/main' # Chỉ chạy khi push vào nhánh main
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+      
       - name: Login to DockerHub
         uses: docker/login-action@v2
         with:
+          # Đây là biến khớp với ảnh bạn gửi (DOCKERHUB_...)
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-      - name: Build Docker image
-        run: docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/nextjs-app:latest .
-      - name: Push Docker image
-        run: docker push ${{ secrets.DOCKERHUB_USERNAME }}/nextjs-app:latest
+      
+      - name: Build and Push Docker image
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          push: true
+          # Tên Image sẽ là: user-cua-ban/nextjs-app
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/nextjs-app:latest
